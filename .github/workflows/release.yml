@@ -1,15 +1,21 @@
 name: Release (Windows, macOS, Linux)
 
-# Neues Release veröffentlichen:
+# Neues Release veröffentlichen, Variante 1 (Git):
 #   git tag v1.0.0
 #   git push origin v1.0.0
-# Danach baut der Workflow alle Pakete und hängt sie an das GitHub-Release.
-# Manuell starten (Actions > Release > Run workflow) baut nur die Artefakte, ohne Release.
+# Variante 2 (im Browser): Actions > Release > Run workflow > Tag eintragen (z. B. v1.0.0).
+# Ohne Tag-Eingabe entstehen beim manuellen Start nur Artefakte, aber kein Release.
+# Ohne Release gibt es keine Dateien unter .../releases/latest/download/... (die Download-Links der Seite melden 404).
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag für ein Release, muss mit v beginnen (z. B. v1.0.0). Leer lassen = nur Artefakte bauen."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -84,11 +90,20 @@ jobs:
   release:
     name: Release veröffentlichen
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Tag prüfen
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          case "$TAG" in
+            v*) echo "Release-Tag: $TAG" ;;
+            *) echo "Der Tag muss mit v beginnen, ist aber: $TAG" >&2; exit 1 ;;
+          esac
+
       - uses: actions/download-artifact@v4
         with:
           pattern: MiniWebserver-*
@@ -103,5 +118,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
           files: release/*
           generate_release_notes: true
