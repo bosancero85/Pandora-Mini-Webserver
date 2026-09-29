@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Webserver - Python CustomTkinter Desktop Webserver</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyberBg: '#0F0F1A',
+                        cyberCard: 'rgba(22, 22, 42, 0.7)',
+                        cyberBorder: 'rgba(157, 0, 255, 0.2)',
+                        neonPurple: '#9D00FF',
+                        neonCyan: '#00F0FF',
+                        neonGreen: '#00FF88',
+                        neonPink: '#FF0055'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    boxShadow: {
+                        'neon-purple': '0 0 25px rgba(157, 0, 255, 0.35)',
+                        'neon-cyan': '0 0 25px rgba(0, 240, 255, 0.35)',
+                        'neon-green': '0 0 15px rgba(0, 255, 136, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #0F0F1A;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Subtle glowing grid background */
+        .bg-cyber-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(157, 0, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+        }
+
+        /* Glassmorphism style */
+        .glass-panel {
+            background: rgba(22, 22, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-panel-glow {
+            background: rgba(22, 22, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Animated Glowing Gradients */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Custom Scrollbar for Terminal / Logs */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 15, 26, 0.8);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.3);
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 240, 255, 0.6);
+        }
+
+        /* Pulse Animations */
+        @keyframes statusPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+        .pulse-active {
+            animation: statusPulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-cyber-grid min-h-screen relative selection:bg-neonCyan selection:text-black">
+
+    <!-- Background Ambient Glow Orbs -->
+    <div class="glow-orb w-[500px] h-[500px] bg-neonPurple/20 -top-20 -left-20"></div>
+    <div class="glow-orb w-[600px] h-[600px] bg-neonCyan/15 top-1/3 -right-40"></div>
+    <div class="glow-orb w-[500px] h-[500px] bg-neonPurple/15 bottom-20 left-1/4"></div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-white/10 px-4 lg:px-8 py-3 transition-all duration-300">
+        <div class="max-w-7xl mx-mx-auto flex items-center justify-between mx-auto">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonPurple to-neonCyan p-[1px] shadow-neon-purple group-hover:scale-105 transition-transform">
+                    <div class="w-full h-full bg-cyberBg rounded-[11px] flex items-center justify-center text-neonCyan font-mono font-bold text-lg">
+                        <i class="fas fa-server"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-lg tracking-wider text-white font-mono">Mini<span class="text-neonCyan">WebServer</span></span>
+                        <span class="text-[10px] bg-neonPurple/30 text-neonCyan font-mono px-2 py-0.5 rounded-full border border-neonPurple/50">v1.0.0</span>
+                    </div>
+                    <p class="text-[11px] text-gray-400 -mt-1 hidden sm:block">CustomTkinter • System Tray • Python 3</p>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+                <a href="#download" class="hover:text-neonCyan transition-colors flex items-center gap-2">
+                    <i class="fas fa-download text-xs text-neonGreen"></i> Download
+                </a>
+                <a href="#simulator" class="hover:text-neonCyan transition-colors flex items-center gap-2">
+                    <i class="fas fa-desktop text-xs text-neonPurple"></i> Live GUI Demo
+                </a>
+                <a href="#features" class="hover:text-neonCyan transition-colors flex items-center gap-2">
+                    <i class="fas fa-bolt text-xs text-neonCyan"></i> Features
+                </a>
+                <a href="#architecture" class="hover:text-neonCyan transition-colors flex items-center gap-2">
+                    <i class="fas fa-sitemap text-xs text-neonPurple"></i> Architektur
+                </a>
+                <a href="#quickstart" class="hover:text-neonCyan transition-colors flex items-center gap-2">
+                    <i class="fas fa-terminal text-xs text-neonCyan"></i> Quickstart
+                </a>
+            </nav>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-3">
+                <a href="#download" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neonPurple/20 hover:bg-neonPurple/30 text-neonCyan text-xs font-mono border border-neonPurple/50 transition-all shadow-neon-purple">
+                    <i class="fas fa-download"></i> <span data-dl-label>Download</span>
+                </a>
+                <a href="https://github.com" data-repo-link target="_blank" rel="noopener" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium border border-white/15 transition-all hover:border-neonCyan">
+                    <i class="fab fa-github text-base"></i>
+                    <span class="hidden xs:inline">GitHub Repository</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative z-10 pt-16 pb-12 lg:pt-24 lg:pb-20 px-4 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto">
+            <!-- Pill Badge -->
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-neonCyan/30 text-neonCyan text-xs font-mono mb-6 backdrop-blur-md shadow-neon-cyan">
+                <span class="w-2 h-2 rounded-full bg-neonGreen pulse-active"></span>
+                <span>Python 3+ Desktop HTTP Server</span>
+                <span class="text-gray-500">•</span>
+                <span class="text-purple-300">PyInstaller Ready</span>
+            </div>
+
+            <!-- Main Headline -->
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-6 leading-tight">
+                Dein lokaler Webserver. <br>
+                <span class="bg-gradient-to-r from-neonCyan via-purple-300 to-neonPurple bg-clip-text text-transparent">
+                    Schlank, GUI-gestützt & Im Tray.
+                </span>
+            </h1>
+
+            <p class="text-base sm:text-lg text-gray-300 mb-8 leading-relaxed font-normal">
+                Ein leistungstarker, lokaler Python HTTP-Server mit modernem CustomTkinter-Frontend, unauffälliger Minimierung in die Taskleiste und automatisierter CI/CD-Pipeline für fertige Programme unter Windows, macOS und Linux.
+            </p>
+
+            <!-- Hero Action Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
+                <a href="#download" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 hover:to-neonGreen text-black font-bold text-sm shadow-neon-green transition-all transform hover:-translate-y-0.5 flex items-center gap-3">
+                    <i class="fas fa-download"></i> <span data-dl-label>Download</span>
+                </a>
+                <a href="#simulator" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-neonPurple to-indigo-600 hover:from-purple-600 hover:to-neonPurple text-white font-semibold text-sm shadow-neon-purple transition-all transform hover:-translate-y-0.5 flex items-center gap-3">
+                    <i class="fas fa-play text-neonCyan"></i> Live UI Simulator Testen
+                </a>
+                <a href="#quickstart" class="px-6 py-3.5 rounded-xl bg-cyberCard hover:bg-white/10 text-gray-200 hover:text-white font-mono text-sm border border-white/15 transition-all flex items-center gap-3 hover:border-neonCyan">
+                    <i class="fas fa-code text-neonCyan"></i> Terminal Quickstart
+                </a>
+            </div>
+
+            <!-- Feature Pills / Badges -->
+            <div class="pt-6 border-t border-white/10 flex flex-wrap justify-center items-center gap-6 text-xs text-gray-400 font-mono">
+                <div class="flex items-center gap-2">
+                    <i class="fab fa-python text-neonCyan text-base"></i> CustomTkinter GUI
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-tray text-neonPurple text-base"></i> PyStray System Tray
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-box text-emerald-400 text-base"></i> PyInstaller EXE Build
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-vial text-amber-400 text-base"></i> Pytest Smoke Verified
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section (Betriebssystem wird automatisch erkannt) -->
+    <section id="download" class="relative z-10 py-12 px-4 max-w-6xl mx-auto scroll-mt-20">
+        <div class="text-center mb-10">
+            <span class="text-xs font-mono text-neonCyan uppercase tracking-widest block mb-2">// Fertige Programme, kein Python nötig</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-mono">Mini Webserver herunterladen</h2>
+        </div>
+
+        <!-- Empfehlung fürs erkannte System -->
+        <div class="glass-panel-glow rounded-2xl border border-neonCyan/40 p-6 sm:p-8 mb-8 flex flex-col md:flex-row items-center gap-6 shadow-neon-cyan">
+            <div class="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl text-neonCyan shrink-0">
+                <i id="dlPrimaryIcon" class="fas fa-download"></i>
+            </div>
+            <div class="flex-1 text-center md:text-left">
+                <p id="dlDetected" class="text-xs font-mono text-gray-400 mb-1">Betriebssystem wird erkannt ...</p>
+                <h3 id="dlPrimaryTitle" class="text-xl font-bold text-white mb-1">Wähle dein Betriebssystem</h3>
+                <p id="dlPrimaryNote" class="text-sm text-gray-300">Windows, macOS und Linux stehen unten zur Auswahl.</p>
+            </div>
+            <a id="dlPrimaryBtn" href="#dlAll" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 hover:to-neonGreen text-black font-bold font-mono text-sm shadow-neon-green transition-all flex items-center justify-center gap-2 shrink-0">
+                <i class="fas fa-download"></i> <span id="dlPrimaryBtnText">Alle Downloads ansehen</span>
+            </a>
+        </div>
+
+        <!-- Alle Downloads -->
+        <div id="dlAll" class="grid grid-cols-1 md:grid-cols-3 gap-6 scroll-mt-24">
+            <div data-os-card="windows" class="glass-panel rounded-2xl border border-white/10 p-5 transition-all">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fab fa-windows text-3xl text-sky-400"></i>
+                    <div>
+                        <h4 class="font-bold text-white">Windows</h4>
+                        <p class="text-[11px] text-gray-400 font-mono">Windows 10 / 11, 64-Bit</p>
+                    </div>
+                </div>
+                <a data-asset="windows-x64" href="#download" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-neonCyan text-sm text-gray-200 transition-all">
+                    <span class="font-mono">.exe (portabel)</span> <i class="fas fa-download text-neonCyan"></i>
+                </a>
+                <p class="text-xs text-gray-400 mt-4 leading-relaxed">Die .exe in den Ordner deines HTML-Projekts legen und starten. SmartScreen kann warnen, weil die Datei nicht signiert ist: „Weitere Informationen“, dann „Trotzdem ausführen“.</p>
+            </div>
+
+            <div data-os-card="macos" class="glass-panel rounded-2xl border border-white/10 p-5 transition-all">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fab fa-apple text-3xl text-gray-200"></i>
+                    <div>
+                        <h4 class="font-bold text-white">macOS</h4>
+                        <p class="text-[11px] text-gray-400 font-mono">App als ZIP</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <a data-asset="macos-arm64" href="#download" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-neonCyan text-sm text-gray-200 transition-all">
+                        <span class="font-mono">Apple Silicon (M1 und neuer)</span> <i class="fas fa-download text-neonCyan"></i>
+                    </a>
+                    <a data-asset="macos-x86_64" href="#download" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-neonCyan text-sm text-gray-200 transition-all">
+                        <span class="font-mono">Intel-Mac</span> <i class="fas fa-download text-neonCyan"></i>
+                    </a>
+                </div>
+                <p class="text-xs text-gray-400 mt-4 leading-relaxed">ZIP entpacken und die App starten. Sie ist nicht signiert: beim ersten Start Rechtsklick auf die App, dann „Öffnen“. Das Symbol erscheint in der Menüleiste; Schließen des Fensters lässt das Programm dort weiterlaufen.</p>
+            </div>
+
+            <div data-os-card="linux" class="glass-panel rounded-2xl border border-white/10 p-5 transition-all">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fab fa-linux text-3xl text-amber-300"></i>
+                    <div>
+                        <h4 class="font-bold text-white">Linux</h4>
+                        <p class="text-[11px] text-gray-400 font-mono">Programmdatei als .tar.gz</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <a data-asset="linux-x86_64" href="#download" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-neonCyan text-sm text-gray-200 transition-all">
+                        <span class="font-mono">x86_64 (PC, Laptop)</span> <i class="fas fa-download text-neonCyan"></i>
+                    </a>
+                    <a data-asset="linux-arm64" href="#download" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-neonCyan text-sm text-gray-200 transition-all">
+                        <span class="font-mono">arm64 (Raspberry Pi 4/5, 64-Bit)</span> <i class="fas fa-download text-neonCyan"></i>
+                    </a>
+                </div>
+                <p class="text-xs text-gray-400 mt-4 leading-relaxed">Entpacken mit <code class="text-neonCyan">tar -xzf</code> und mit <code class="text-neonCyan">./MiniWebserver</code> starten. Braucht eine grafische Oberfläche (X11 oder XWayland).</p>
+            </div>
+        </div>
+
+        <p class="text-center text-xs text-gray-400 font-mono mt-6">
+            <a data-releases href="#download" target="_blank" rel="noopener" class="hover:text-neonCyan transition-colors"><i class="fab fa-github"></i> Alle Releases</a>
+            <span class="mx-2">•</span>
+            <a data-file="SHA256SUMS.txt" href="#download" class="hover:text-neonCyan transition-colors"><i class="fas fa-fingerprint"></i> Prüfsummen (SHA-256)</a>
+        </p>
+    </section>
+
+    <!-- Interactive GUI Simulator Section -->
+    <section id="simulator" class="relative z-10 py-12 px-4 max-w-6xl mx-auto scroll-mt-20">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2 font-mono">
+                <span class="text-neonCyan">&lt;</span> Live GUI Simulator <span class="text-neonCyan">/&gt;</span>
+            </h2>
+            <p class="text-sm text-gray-400">
+                Interagiere direkt mit dem nachgebildeten CustomTkinter Desktop-Interface & teste alle Serverfunktionen.
+            </p>
+        </div>
+
+        <!-- CustomTkinter Window Replica -->
+        <div class="glass-panel-glow rounded-2xl overflow-hidden shadow-2xl border border-neonPurple/40 relative">
+            
+            <!-- CustomTkinter Window Titlebar -->
+            <div class="bg-[#121225] px-4 py-3 border-b border-white/10 flex items-center justify-between select-none">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="simMinimize()" title="Minimieren" class="w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-400 transition-colors flex items-center justify-center text-[8px] text-black"><i class="fas fa-minus opacity-0 hover:opacity-100"></i></button>
+                        <button onclick="simMaximize()" title="Maximieren" class="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center text-[8px] text-black"><i class="fas fa-expand opacity-0 hover:opacity-100"></i></button>
+                        <button onclick="simClose()" title="Schließen" class="w-3 h-3 rounded-full bg-rose-500 hover:bg-rose-400 transition-colors flex items-center justify-center text-[8px] text-black"><i class="fas fa-times opacity-0 hover:opacity-100"></i></button>
+                    </div>
+                    <span class="text-xs font-mono text-gray-300 font-medium flex items-center gap-2">
+                        <i class="fas fa-server text-neonCyan text-xs"></i> Mini Webserver v1.0.0 — CustomTkinter Dark Engine
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="simMinimizeToTray()" class="px-2.5 py-1 rounded bg-neonPurple/20 hover:bg-neonPurple/40 text-neonCyan text-[11px] font-mono border border-neonPurple/40 transition-colors flex items-center gap-1.5">
+                        <i class="fas fa-window-minimize text-[10px]"></i> System-Tray
+                    </button>
+                </div>
+            </div>
+
+            <!-- Window Content Area (CustomTkinter Layout) -->
+            <div id="simWindowBody" class="p-4 sm:p-6 bg-[#0D0D18] grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-300">
+                
+                <!-- Left Panel: Controls & Settings (5 Cols) -->
+                <div class="lg:col-span-5 space-y-5">
+                    
+                    <!-- Server Status Card -->
+                    <div class="p-4 rounded-xl bg-[#16162a] border border-white/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-mono text-gray-400 block mb-1">Server Status</span>
+                            <div class="flex items-center gap-2">
+                                <span id="simStatusDot" class="w-3 h-3 rounded-full bg-rose-500"></span>
+                                <span id="simStatusText" class="font-mono text-sm font-bold text-rose-400">OFFLINE</span>
+                            </div>
+                        </div>
+                        <div class="text-right font-mono">
+                            <span class="text-[10px] text-gray-500 block">LOKALE IP</span>
+                            <span id="simIpAddress" class="text-xs text-neonCyan">192.168.1.105</span>
+                        </div>
+                    </div>
+
+                    <!-- Config Form -->
+                    <div class="p-4 rounded-xl bg-[#16162a] border border-white/10 space-y-4 font-mono text-xs">
+                        <!-- Port Input -->
+                        <div>
+                            <label class="block text-gray-300 mb-1.5 flex justify-between">
+                                <span>PORT AUSWAHL:</span>
+                                <span class="text-gray-500 text-[10px]">(Standard: 8080)</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="simPortInput" value="8080" class="w-full bg-[#0A0A12] border border-white/15 rounded-lg px-3 py-2 text-neonCyan focus:outline-none focus:border-neonCyan transition-colors">
+                                <span class="absolute right-3 top-2.5 text-gray-500 text-[10px]">TCP</span>
+                            </div>
+                        </div>
+
+                        <!-- Directory Selection -->
+                        <div>
+                            <label class="block text-gray-300 mb-1.5">WEB-VERZEICHNIS (ROOT):</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="simDirInput" value="C:/Projects/mini-webserver/public" readonly class="w-full bg-[#0A0A12] border border-white/15 rounded-lg px-3 py-2 text-gray-300 text-[11px] truncate focus:outline-none">
+                                <button onclick="simBrowseDir()" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-sans text-xs transition-colors whitespace-nowrap">
+                                    <i class="fas fa-folder-open text-amber-400"></i> Durchsuchen
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Auto-Open Checkbox Mock -->
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="checkbox" id="simAutoOpen" checked class="rounded border-gray-700 bg-[#0A0A12] text-neonPurple focus:ring-0">
+                            <label for="simAutoOpen" class="text-gray-400 text-[11px] cursor-pointer">Im Browser nach Start automatisch öffnen</label>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="space-y-2.5">
+                        <button id="simStartBtn" onclick="simToggleServer()" class="w-full py-3 rounded-xl bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 hover:to-neonGreen text-black font-bold font-mono text-sm shadow-neon-green transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-play"></i> SERVER STARTEN
+                        </button>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="simOpenInBrowser()" class="py-2.5 rounded-lg bg-white/5 hover:bg-white/15 text-gray-200 border border-white/10 font-mono text-xs transition-colors flex items-center justify-center gap-1.5">
+                                <i class="fas fa-external-link-alt text-neonCyan"></i> Browser Vorschau
+                            </button>
+                            <button onclick="simClearLogs()" class="py-2.5 rounded-lg bg-white/5 hover:bg-white/15 text-gray-200 border border-white/10 font-mono text-xs transition-colors flex items-center justify-center gap-1.5">
+                                <i class="fas fa-trash-alt text-rose-400"></i> Log Leeren
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Live Console Logs & Network Traffic (7 Cols) -->
+                <div class="lg:col-span-7 flex flex-col h-[380px] rounded-xl bg-[#080810] border border-white/10 overflow-hidden font-mono text-xs">
+                    
+                    <!-- Console Header -->
+                    <div class="bg-[#121222] px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-terminal text-neonCyan text-xs"></i>
+                            <span class="text-gray-300 font-semibold text-[11px]">LIVE CONSOLE LOGS</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[10px] text-gray-400">
+                            <span id="simRequestCount" class="text-neonCyan">Requests: 0</span>
+                            <span class="w-2 h-2 rounded-full bg-neonCyan/50"></span>
+                            <span>Standardout / HTTP Core</span>
+                        </div>
+                    </div>
+
+                    <!-- Console Body -->
+                    <div id="simLogConsole" class="p-4 flex-1 overflow-y-auto space-y-1.5 custom-scroll text-gray-300">
+                        <div class="text-gray-500 font-mono">[00:00:00] [SYSTEM] Mini Webserver Core Initialisiert...</div>
+                        <div class="text-gray-500 font-mono">[00:00:00] [SYSTEM] Bereit. Drücke "Server Starten" um den HTTP-Dienst zu aktivieren.</div>
+                    </div>
+
+                    <!-- Console Footer Banner -->
+                    <div class="bg-[#101020] px-4 py-2 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
+                        <span>Threading: <span class="text-emerald-400">Aktiv</span></span>
+                        <span>HTTP/1.1 SimpleHTTPRequestHandler</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Simulated System Tray Popup Toast (Appears when minimized) -->
+            <div id="simTrayToast" class="hidden absolute bottom-4 right-4 bg-[#16162d] border border-neonCyan/50 rounded-xl p-4 shadow-2xl z-20 max-w-sm animate-bounce">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-neonPurple/30 border border-neonPurple flex items-center justify-center text-neonCyan shrink-0">
+                        <i class="fas fa-tray"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-xs font-bold text-white font-mono">In System-Tray minimiert</h4>
+                            <button onclick="simRestoreFromTray()" class="text-gray-400 hover:text-white text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p class="text-[11px] text-gray-300 mb-2">Der Mini Webserver läuft unauffällig im Hintergrund weiter.</p>
+                        <button onclick="simRestoreFromTray()" class="px-3 py-1 rounded bg-neonCyan/20 hover:bg-neonCyan/30 text-neonCyan text-[11px] font-mono border border-neonCyan/40 transition-colors">
+                            Wiederherstellen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- System Tray Floating Icon Bar (Demo restore launcher) -->
+        <div id="simTrayIconBar" class="hidden fixed bottom-6 right-6 z-40 flex items-center gap-3 bg-[#16162a]/90 backdrop-blur-md border border-neonCyan/50 px-4 py-2.5 rounded-full shadow-neon-cyan animate-pulse cursor-pointer" onclick="simRestoreFromTray()">
+            <div class="w-3 h-3 rounded-full bg-neonGreen pulse-active"></div>
+            <span class="text-xs font-mono text-neonCyan font-medium">Mini Webserver (Aktiv auf :<span id="simTrayPortText">8080</span>)</span>
+            <i class="fas fa-chevron-up text-xs text-gray-400"></i>
+        </div>
+    </section>
+
+    <!-- Features Grid Section -->
+    <section id="features" class="relative z-10 py-16 px-4 max-w-7xl mx-auto scroll-mt-20">
+        <div class="text-center max-w-2xl mx-auto mb-14">
+            <span class="text-xs font-mono text-neonCyan uppercase tracking-widest block mb-2">// Projekt-Highlights</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Alles was ein moderner Mini-Server braucht</h2>
+            <p class="text-sm text-gray-400 mt-3">Kompakt im Code, professionell in der Architektur & blitzschnell eingerichtet.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Feature 1 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-neonPurple/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-neonPurple/20 border border-neonPurple/40 flex items-center justify-center text-neonCyan text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-neonCyan transition-colors">CustomTkinter GUI</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Ansprechende, dunkle Desktop-Benutzeroberfläche basierend auf CustomTkinter mit flüssigen Animationen und intuitivem Dashboard.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-neonCyan/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-neonCyan/20 border border-neonCyan/40 flex items-center justify-center text-neonCyan text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-tray"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-neonCyan transition-colors">System-Tray Integration</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Dank PyStray verschwindet die App auf Wunsch sauber in die Windows Taskleiste oder macOS Menüleiste und läuft dort ressourcenschonend.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-emerald-400 transition-colors">HTTP Core & IP Detection</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Python-eigener multithreaded HTTP-Server. Erkennt automatisch die lokale WLAN/LAN IP-Adresse für schnelles Testen von Mobilgeräten.
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-amber-400 transition-colors">PyInstaller & Batch Build</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Mit dem mitgelieferten <code class="text-neonCyan">build.bat</code> Skript lässt sich das Projekt im Handumdrehen in eine eigenständige `.exe` kompilieren.
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-purple-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-purple-300 transition-colors">Automatische GitHub CI/CD</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Integrierte `.github/workflows/build.yml` baut automatisch bei jedem Push oder Release eine einsatzbereite Executable.
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-12 h-12 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-xl mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2 font-mono group-hover:text-rose-400 transition-colors">Pytest Unit & Smoke Tests</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Umfassende Testabdeckung für Server-Threads, Pfad-Auflösung und Headless UI Smoke Tests stellen ständige Stabilität sicher.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Modular Architecture Section -->
+    <section id="architecture" class="relative z-10 py-16 px-4 max-w-7xl mx-auto scroll-mt-20">
+        <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-white/10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left Details Info -->
+                <div class="lg:col-span-5 space-y-6">
+                    <span class="text-xs font-mono text-neonPurple uppercase tracking-widest block">// Modulares Design</span>
+                    <h2 class="text-3xl font-extrabold text-white font-mono">Clean Architecture in Python</h2>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        Das Projekt ist strikt in nachvollziehbare Module unterteilt. Kern-Logik, Benutzeroberfläche und Hilfs-Utilities sind sauber voneinander getrennt.
+                    </p>
+
+                    <div class="space-y-3 font-mono text-xs">
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3">
+                            <i class="fas fa-cubes text-neonCyan text-base"></i>
+                            <div>
+                                <strong class="text-white block">mini_webserver/core/</strong>
+                                <span class="text-gray-400 text-[11px]">Enthält den multithreaded Server Wrapper.</span>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3">
+                            <i class="fas fa-[#9D00FF] fa-window-restore text-neonPurple text-base"></i>
+                            <div>
+                                <strong class="text-white block">mini_webserver/ui/</strong>
+                                <span class="text-gray-400 text-[11px]">CustomTkinter App Window & Tray Manager.</span>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3">
+                            <i class="fas fa-tools text-emerald-400 text-base"></i>
+                            <div>
+                                <strong class="text-white block">mini_webserver/utils/</strong>
+                                <span class="text-gray-400 text-[11px]">IP-Netzwerkerkennung & Pfad-Helfer.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Interactive Directory Explorer Tree -->
+                <div class="lg:col-span-7 bg-[#090912] rounded-2xl p-5 border border-neonPurple/30 font-mono text-xs shadow-2xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4 text-gray-400">
+                        <span class="flex items-center gap-2 text-neonCyan"><i class="fas fa-folder-tree"></i> Project Directory Structure</span>
+                        <span class="text-[10px] text-gray-500">Klicke auf Dateien für Details</span>
+                    </div>
+
+                    <div class="space-y-1.5 custom-scroll max-h-[350px] overflow-y-auto pr-2">
+                        
+                        <!-- Root Level -->
+                        <div onclick="selectArchItem('main')" class="arch-item cursor-pointer p-1.5 rounded hover:bg-white/10 flex items-center gap-2 text-white font-bold bg-white/5">
+                            <i class="fas fa-file-code text-amber-400"></i> mini-webserver/main.py
+                        </div>
+
+                        <!-- Core Dir -->
+                        <div class="pl-4 space-y-1">
+                            <div class="text-gray-400 flex items-center gap-2"><i class="fas fa-folder-open text-neonPurple"></i> mini_webserver/core/</div>
+                            <div onclick="selectArchItem('server')" class="arch-item pl-6 cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-file-code text-neonCyan"></i> server.py <span class="text-[10px] text-gray-500">(HTTP Thread Manager)</span>
+                            </div>
+                        </div>
+
+                        <!-- UI Dir -->
+                        <div class="pl-4 space-y-1 pt-1">
+                            <div class="text-gray-400 flex items-center gap-2"><i class="fas fa-folder-open text-neonPurple"></i> mini_webserver/ui/</div>
+                            <div onclick="selectArchItem('app')" class="arch-item pl-6 cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-file-code text-neonCyan"></i> app.py <span class="text-[10px] text-gray-500">(CustomTkinter Main GUI)</span>
+                            </div>
+                            <div onclick="selectArchItem('tray')" class="arch-item pl-6 cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-file-code text-neonCyan"></i> tray.py <span class="text-[10px] text-gray-500">(PyStray Tray Menu)</span>
+                            </div>
+                        </div>
+
+                        <!-- Utils Dir -->
+                        <div class="pl-4 space-y-1 pt-1">
+                            <div class="text-gray-400 flex items-center gap-2"><i class="fas fa-folder-open text-neonPurple"></i> mini_webserver/utils/</div>
+                            <div onclick="selectArchItem('net')" class="arch-item pl-6 cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-file-code text-neonCyan"></i> net.py <span class="text-[10px] text-gray-500">(LAN IP Resolver)</span>
+                            </div>
+                            <div onclick="selectArchItem('paths')" class="arch-item pl-6 cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-file-code text-neonCyan"></i> paths.py <span class="text-[10px] text-gray-500">(Asset & Exe Resolution)</span>
+                            </div>
+                        </div>
+
+                        <!-- CI/CD & Tests -->
+                        <div class="pl-4 space-y-1 pt-1">
+                            <div onclick="selectArchItem('build_bat')" class="arch-item cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-terminal text-emerald-400"></i> build.bat <span class="text-[10px] text-gray-500">(PyInstaller Packaging)</span>
+                            </div>
+                            <div onclick="selectArchItem('workflow')" class="arch-item cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-code-branch text-purple-400"></i> .github/workflows/build.yml
+                            </div>
+                            <div onclick="selectArchItem('tests')" class="arch-item cursor-pointer p-1 rounded hover:bg-white/10 text-gray-300 flex items-center gap-2">
+                                <i class="fas fa-vial text-rose-400"></i> tests/ (test_core.py, test_ui_smoke.py)
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Arch Detail Inspector Output -->
+                    <div id="archInspector" class="mt-4 p-3 rounded-lg bg-[#111122] border border-white/10 text-[11px] text-gray-300">
+                        <span class="text-neonCyan font-bold">INFO:</span> Wähle ein Modul oben aus, um dessen Aufgabe im Server zu sehen.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Quickstart & Installation Section -->
+    <section id="quickstart" class="relative z-10 py-16 px-4 max-w-6xl mx-auto scroll-mt-20">
+        <div class="text-center mb-10">
+            <span class="text-xs font-mono text-neonCyan uppercase tracking-widest block mb-2">// In unter 1 Minute startklar</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-mono">Installations- & Build-Anleitung</h2>
+        </div>
+
+        <!-- Tabbed Code Box -->
+        <div class="glass-panel rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+            
+            <!-- Code Header Tabs -->
+            <div class="bg-[#121225] px-4 py-3 border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="switchTab('tab-python')" id="btn-tab-python" class="px-3 py-1.5 rounded-lg bg-neonPurple/30 text-neonCyan font-mono text-xs border border-neonPurple/50">
+                        <i class="fab fa-python"></i> Python Start
+                    </button>
+                    <button onclick="switchTab('tab-exe')" id="btn-tab-exe" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-mono text-xs border border-white/10">
+                        <i class="fab fa-windows"></i> Windows (build.bat)
+                    </button>
+                    <button onclick="switchTab('tab-linux')" id="btn-tab-linux" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-mono text-xs border border-white/10">
+                        <i class="fab fa-linux"></i> Linux (build_linux.sh)
+                    </button>
+                    <button onclick="switchTab('tab-macos')" id="btn-tab-macos" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-mono text-xs border border-white/10">
+                        <i class="fab fa-apple"></i> macOS (build_macos.sh)
+                    </button>
+                    <button onclick="switchTab('tab-pytest')" id="btn-tab-pytest" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-mono text-xs border border-white/10">
+                        <i class="fas fa-vial"></i> Tests Ausführen
+                    </button>
+                </div>
+
+                <div class="text-xs font-mono text-gray-400">
+                    Requirements: <span class="text-neonCyan">Python 3.9+</span>
+                </div>
+            </div>
+
+            <!-- Tab Content 1: Python Start -->
+            <div id="tab-python" class="p-6 bg-[#090912] font-mono text-xs sm:text-sm text-gray-200 relative group">
+                <button onclick="copyCode('code-python', this)" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition-colors border border-white/10 flex items-center gap-1.5">
+                    <i class="far fa-copy"></i> Kopieren
+                </button>
+                <pre id="code-python" class="overflow-x-auto custom-scroll text-neonCyan"><code><span class="text-gray-500"># 1. Repository klonen</span>
+git clone https://github.com/bosancero85/Pandora-Mini-Webserver.git
+cd Pandora-Mini-Webserver
+
+<span class="text-gray-500"># 2. Abhängigkeiten installieren (CustomTkinter, PyStray, Pillow)</span>
+pip install -r requirements.txt
+
+<span class="text-gray-500"># 3. Mini Webserver starten</span>
+python main.py</code></pre>
+            </div>
+
+            <!-- Tab Content 2: Build Exe -->
+            <div id="tab-exe" class="hidden p-6 bg-[#090912] font-mono text-xs sm:text-sm text-gray-200 relative group">
+                <button onclick="copyCode('code-exe', this)" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition-colors border border-white/10 flex items-center gap-1.5">
+                    <i class="far fa-copy"></i> Kopieren
+                </button>
+                <pre id="code-exe" class="overflow-x-auto custom-scroll text-neonCyan"><code><span class="text-gray-500"># Windows-Programm lokal mit PyInstaller kompilieren</span>
+.\build.bat
+
+<span class="text-gray-500"># Die fertige .exe Datei befindet sich anschließend in:</span>
+<span class="text-emerald-400">dist/MiniWebserver.exe</span></code></pre>
+            </div>
+
+            <!-- Tab Content: tab-linux -->
+            <div id="tab-linux" class="hidden p-6 bg-[#090912] font-mono text-xs sm:text-sm text-gray-200 relative group">
+                <button onclick="copyCode('code-linux', this)" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition-colors border border-white/10 flex items-center gap-1.5">
+                    <i class="far fa-copy"></i> Kopieren
+                </button>
+                <pre id="code-linux" class="overflow-x-auto custom-scroll text-neonCyan"><code><span class="text-gray-500"># Linux-Programm lokal bauen (Python 3.9+, tkinter und venv nötig)</span>
+<span class="text-gray-500"># Debian/Ubuntu/Kali/Raspberry Pi OS: sudo apt install python3-tk python3-venv</span>
+bash build_linux.sh
+
+<span class="text-gray-500"># Ergebnis (x86_64 oder arm64, je nach Rechner):</span>
+<span class="text-emerald-400">dist/MiniWebserver-Linux-x86_64.tar.gz</span></code></pre>
+            </div>
+
+            <!-- Tab Content: tab-macos -->
+            <div id="tab-macos" class="hidden p-6 bg-[#090912] font-mono text-xs sm:text-sm text-gray-200 relative group">
+                <button onclick="copyCode('code-macos', this)" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition-colors border border-white/10 flex items-center gap-1.5">
+                    <i class="far fa-copy"></i> Kopieren
+                </button>
+                <pre id="code-macos" class="overflow-x-auto custom-scroll text-neonCyan"><code><span class="text-gray-500"># macOS-App lokal bauen (Python 3.9+ mit tkinter, z. B. brew install python-tk)</span>
+bash build_macos.sh
+
+<span class="text-gray-500"># Ergebnis (arm64 oder x86_64, je nach Mac):</span>
+<span class="text-emerald-400">dist/MiniWebserver-macOS-arm64.zip</span></code></pre>
+            </div>
+
+            <!-- Tab Content 3: Pytest -->
+            <div id="tab-pytest" class="hidden p-6 bg-[#090912] font-mono text-xs sm:text-sm text-gray-200 relative group">
+                <button onclick="copyCode('code-pytest', this)" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition-colors border border-white/10 flex items-center gap-1.5">
+                    <i class="far fa-copy"></i> Kopieren
+                </button>
+                <pre id="code-pytest" class="overflow-x-auto custom-scroll text-neonCyan"><code><span class="text-gray-500"># Pytest & Smoke-Tests ausführen</span>
+pytest tests/ -v
+
+<span class="text-gray-500"># Output:</span>
+<span class="text-emerald-400">tests/test_core.py :: test_server_start_stop PASSED</span>
+<span class="text-emerald-400">tests/test_ui_smoke.py :: test_gui_initialization PASSED</span></code></pre>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Simulated Browser Preview Modal -->
+    <div id="browserModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel-glow rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl border border-neonCyan/40">
+            <!-- Modal Titlebar -->
+            <div class="bg-[#121225] px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2 w-full max-w-lg">
+                    <span class="text-xs text-gray-400 font-mono"><i class="fas fa-globe text-neonCyan"></i> Browser Preview</span>
+                    <div class="flex-1 bg-[#0A0A12] px-3 py-1 rounded-full border border-white/15 text-xs font-mono text-neonCyan truncate">
+                        http://127.0.0.1:<span id="modalPortText">8080</span>/
+                    </div>
+                </div>
+                <button onclick="closeBrowserModal()" class="text-gray-400 hover:text-white px-2 py-1"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- Modal Content (Simulated Hosted Webpage) -->
+            <div class="p-8 bg-[#0D0D1A] min-h-[300px] flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-neonCyan/20 text-neonCyan flex items-center justify-center text-2xl mb-4 border border-neonCyan/40 shadow-neon-cyan">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 font-mono">Server Läuft Erfolgreich!</h3>
+                <p class="text-sm text-gray-300 max-w-md mb-6">
+                    Deine HTML/CSS/JS Dateien aus dem ausgewählten Ordner werden nun lokal über deinen Python Mini-Webserver bereitgestellt.
+                </p>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-gray-400">
+                    HTTP Response: <span class="text-emerald-400">200 OK</span> • Content-Type: <span class="text-neonCyan">text/html</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/10 py-10 px-4 mt-20 bg-[#0A0A12]">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-gray-400 font-mono">
+            <div class="flex items-center gap-3">
+                <span class="text-white font-bold text-sm">Mini<span class="text-neonCyan">WebServer</span></span>
+                <span>• Open Source MIT License</span>
+            </div>
+            <div>
+                Entwickelt mit Python 3, CustomTkinter, PyStray & Pillow.
+            </div>
+            <div class="flex items-center gap-4 text-base">
+                <a href="https://github.com" data-repo-link target="_blank" rel="noopener" class="hover:text-neonCyan transition-colors"><i class="fab fa-github"></i></a>
+                <a href="#simulator" class="hover:text-neonCyan transition-colors"><i class="fas fa-desktop"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic for Live Simulator, Modals & Tabs -->
+    <script>
+        // Server Simulator State Variables
+        let isServerRunning = false;
+        let requestCounter = 0;
+        let logInterval = null;
+
+        const simStartBtn = document.getElementById('simStartBtn');
+        const simStatusDot = document.getElementById('simStatusDot');
+        const simStatusText = document.getElementById('simStatusText');
+        const simLogConsole = document.getElementById('simLogConsole');
+        const simPortInput = document.getElementById('simPortInput');
+        const simDirInput = document.getElementById('simDirInput');
+        const simRequestCount = document.getElementById('simRequestCount');
+
+        // Toggle Server Start / Stop
+        function simToggleServer() {
+            if (!isServerRunning) {
+                // Start Server
+                isServerRunning = true;
+                simStatusDot.className = "w-3 h-3 rounded-full bg-neonGreen pulse-active";
+                simStatusText.innerText = "ONLINE";
+                simStatusText.className = "font-mono text-sm font-bold text-neonGreen";
+
+                simStartBtn.innerHTML = '<i class="fas fa-stop"></i> SERVER STOPPEN';
+                simStartBtn.className = "w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-neonPink hover:from-rose-500 hover:to-rose-700 text-white font-bold font-mono text-sm shadow-xl transition-all flex items-center justify-center gap-2";
+
+                const port = simPortInput.value || "8080";
+                const dir = simDirInput.value;
+
+                appendLog(`[SYSTEM] HTTP-Server gestartet auf http://127.0.0.1:${port}`, 'text-neonGreen');
+                appendLog(`[SYSTEM] Web-Root Ordner: ${dir}`, 'text-gray-400');
+                appendLog(`[SYSTEM] Warten auf eingehende HTTP Requests...`, 'text-gray-500');
+
+                // Start simulated incoming HTTP traffic
+                logInterval = setInterval(() => {
+                    simulateIncomingRequest(port);
+                }, 3000);
+
+            } else {
+                // Stop Server
+                isServerRunning = false;
+                simStatusDot.className = "w-3 h-3 rounded-full bg-rose-500";
+                simStatusText.innerText = "OFFLINE";
+                simStatusText.className = "font-mono text-sm font-bold text-rose-400";
+
+                simStartBtn.innerHTML = '<i class="fas fa-play"></i> SERVER STARTEN';
+                simStartBtn.className = "w-full py-3 rounded-xl bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 hover:to-neonGreen text-black font-bold font-mono text-sm shadow-neon-green transition-all flex items-center justify-center gap-2";
+
+                appendLog(`[SYSTEM] Server gestoppt. Threads beendet.`, 'text-rose-400');
+                if (logInterval) clearInterval(logInterval);
+            }
+        }
+
+        // Append log line to console
+        function appendLog(msg, colorClass = 'text-gray-300') {
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `${colorClass} font-mono leading-relaxed`;
+            div.innerText = `[${time}] ${msg}`;
+            simLogConsole.appendChild(div);
+            simLogConsole.scrollTop = simLogConsole.scrollHeight;
+        }
+
+        // Simulate incoming web request
+        function simulateIncomingRequest(port) {
+            requestCounter++;
+            simRequestCount.innerText = `Requests: ${requestCounter}`;
+            
+            const paths = ['/index.html', '/assets/style.css', '/assets/app.js', '/favicon.ico', '/api/status'];
+            const randomPath = paths[Math.floor(Math.random() * paths.length)];
+            const status = randomPath === '/favicon.ico' ? '404 Not Found' : '200 OK';
+            const statusColor = status.includes('200') ? 'text-neonCyan' : 'text-amber-400';
+
+            appendLog(`[HTTP GET] ${randomPath} - ${status} (${(Math.random() * 5 + 0.5).toFixed(1)}ms)`, statusColor);
+        }
+
+        // Browse Directory Simulator
+        function simBrowseDir() {
+            const mockPaths = [
+                'C:/Projects/my-portfolio/dist',
+                'C:/Projects/mini-webserver/public',
+                'D:/Websites/landing-page',
+                'C:/Users/Admin/Desktop/test-site'
+            ];
+            const current = simDirInput.value;
+            let next = mockPaths[(mockPaths.indexOf(current) + 1) % mockPaths.length];
+            simDirInput.value = next;
+            appendLog(`[CONFIG] Pfad geändert zu: ${next}`, 'text-purple-300');
+        }
+
+        // Clear Logs
+        function simClearLogs() {
+            simLogConsole.innerHTML = '<div class="text-gray-500 font-mono">[SYSTEM] Logs wurden geleert.</div>';
+        }
+
+        // Minimize Window to System Tray
+        function simMinimizeToTray() {
+            document.getElementById('simWindowBody').classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('simTrayToast').classList.remove('hidden');
+            document.getElementById('simTrayIconBar').classList.remove('hidden');
+            document.getElementById('simTrayPortText').innerText = simPortInput.value || '8080';
+            appendLog(`[TRAY] Anwendung im System-Tray minimiert.`, 'text-neonPurple');
+        }
+
+        // Restore Window from System Tray
+        function simRestoreFromTray() {
+            document.getElementById('simWindowBody').classList.remove('opacity-30', 'pointer-events-none');
+            document.getElementById('simTrayToast').classList.add('hidden');
+            document.getElementById('simTrayIconBar').classList.add('hidden');
+            appendLog(`[TRAY] Hauptfenster aus Tray wiederhergestellt.`, 'text-neonCyan');
+        }
+
+        function simMinimize() { simMinimizeToTray(); }
+        function simMaximize() { appendLog(`[GUI] Fenster maximiert.`, 'text-gray-400'); }
+        function simClose() { simMinimizeToTray(); }
+
+        // Open Hosted Browser Preview Modal
+        function simOpenInBrowser() {
+            if (!isServerRunning) {
+                appendLog(`[WARNUNG] Starte zuerst den Server um die Browser-Vorschau anzuzeigen!`, 'text-amber-400');
+                return;
+            }
+            document.getElementById('modalPortText').innerText = simPortInput.value || '8080';
+            document.getElementById('browserModal').classList.remove('hidden');
+        }
+
+        function closeBrowserModal() {
+            document.getElementById('browserModal').classList.add('hidden');
+        }
+
+        // Quickstart Code Tab Switching
+        function switchTab(tabId) {
+            ['tab-python', 'tab-exe', 'tab-pytest'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+
+            ['btn-tab-python', 'btn-tab-exe', 'btn-tab-linux', 'btn-tab-macos', 'btn-tab-pytest'].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                btn.className = "px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-mono text-xs border border-white/10";
+            });
+
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.className = "px-3 py-1.5 rounded-lg bg-neonPurple/30 text-neonCyan font-mono text-xs border border-neonPurple/50";
+        }
+
+        // Interactive Architecture Item Selection Inspector
+        function selectArchItem(key) {
+            const inspector = document.getElementById('archInspector');
+            const descriptions = {
+                'main': '<span class="text-amber-400 font-bold">main.py:</span> Einstiegspunkt der Anwendung. Initialisiert die CustomTkinter GUI & das PyStray Tray-Modul.',
+                'server': '<span class="text-neonCyan font-bold">core/server.py:</span> Verwaltet das Starten und Stoppen des Python SimpleHTTPRequestHandler in einem eigenen Thread.',
+                'app': '<span class="text-neonCyan font-bold">ui/app.py:</span> Das CustomTkinter Hauptfenster mit allen Buttons, Port-Eingaben & Statusanzeigen.',
+                'tray': '<span class="text-neonCyan font-bold">ui/tray.py:</span> Erstellt das System-Tray Icon mit Rechtsklick-Menü (Öffnen, Beenden).',
+                'net': '<span class="text-emerald-400 font-bold">utils/net.py:</span> Ermittelt automatisch die lokale LAN-IP des Rechners.',
+                'paths': '<span class="text-emerald-400 font-bold">utils/paths.py:</span> Stellt sicher, dass Assets (Icon.ico) sowohl in PyInstaller .exe als auch in Python geladen werden.',
+                'build_bat': '<span class="text-emerald-400 font-bold">build.bat:</span> Skript zur einfachen Erstellung der standalone Windows Exe via PyInstaller.',
+                'workflow': '<span class="text-purple-400 font-bold">.github/workflows/build.yml:</span> Automatisierte GitHub Actions Pipeline zum Testen und Kompilieren der Windows-Exe bei Commits. Die Datei release.yml baut bei einem Versions-Tag (v*) zusätzlich macOS und Linux und veröffentlicht alle Pakete als Release.',
+                'tests': '<span class="text-rose-400 font-bold">tests/:</span> Pytest Suite zur Überprüfung der Core-Server Logik und Headless UI Tests.'
+            };
+            inspector.innerHTML = descriptions[key] || 'Unbekanntes Modul.';
+        }
+
+        // Copy Code Snippet Handler (using hidden textarea fallback for iframe safety)
+        function copyCode(elementId, btn) {
+            const codeElement = document.getElementById(elementId);
+            if (!codeElement) return;
+            const text = codeElement.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check text-emerald-400"></i> Kopiert!';
+                btn.classList.add('border-emerald-500/50', 'text-emerald-400');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('border-emerald-500/50', 'text-emerald-400');
+                }, 2000);
+            } catch (err) {
+                console.error('Kopieren fehlgeschlagen', err);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Download: Betriebssystem-Erkennung und Links
+        // ---------------------------------------------------------------
+        // <download-logic>
+        // GitHub-Benutzer/Repository. Alle Download-Links und GitHub-Verweise der Seite leiten sich daraus ab.
+        const MW_REPO = 'bosancero85/Pandora-Mini-Webserver';
+
+        // Dateinamen der Release-Pakete (müssen zu release.yml und den build-Skripten passen)
+        const MW_FILES = {
+            'windows-x64': 'MiniWebserver-Windows-x64.exe',
+            'macos-arm64': 'MiniWebserver-macOS-arm64.zip',
+            'macos-x86_64': 'MiniWebserver-macOS-x86_64.zip',
+            'linux-x86_64': 'MiniWebserver-Linux-x86_64.tar.gz',
+            'linux-arm64': 'MiniWebserver-Linux-arm64.tar.gz'
+        };
+
+        // Erkennt Betriebssystem und Architektur. `nav` ist window.navigator, `hint` optional das
+        // Ergebnis von userAgentData.getHighEntropyValues(['architecture']).
+        function mwDetectPlatform(nav, hint) {
+            nav = nav || {};
+            hint = hint || {};
+            const ua = String(nav.userAgent || '');
+            const plat = String((nav.userAgentData && nav.userAgentData.platform) || nav.platform || '');
+            const touch = Number(nav.maxTouchPoints || 0);
+
+            let os = 'unknown';
+            if (/Android/i.test(ua)) os = 'android';                                   // vor Linux prüfen
+            else if (/iPhone|iPad|iPod/i.test(ua) || (/Mac/i.test(plat) && touch > 1)) os = 'ios'; // iPadOS meldet sich als Mac
+            else if (/Win/i.test(plat) || /Windows/i.test(ua)) os = 'windows';
+            else if (/Mac/i.test(plat) || /Macintosh|Mac OS X/i.test(ua)) os = 'macos';
+            else if (/CrOS/i.test(ua)) os = 'unknown';
+            else if (/Linux|X11|BSD/i.test(plat + ' ' + ua)) os = 'linux';
+
+            // Architektur: Browser melden unter macOS auch auf Apple Silicon "Intel". Deshalb dort nur dem Hinweis trauen.
+            let arch = '';
+            const h = String(hint.architecture || '').toLowerCase();
+            if (h === 'arm') arch = 'arm64';
+            else if (h === 'x86') arch = 'x86_64';
+            else if (os === 'linux') {
+                const hay = ua + ' ' + plat;
+                if (/aarch64|arm64|armv8/i.test(hay)) arch = 'arm64';
+                else if (/armv[567]/i.test(hay)) arch = 'arm32';
+                else if (/x86_64|amd64|x64|i686/i.test(hay)) arch = 'x86_64';
+            }
+            return { os: os, arch: arch, archKnown: arch !== '' };
+        }
+
+        // Wählt das passende Paket. Gibt null zurück, wenn es keins gibt (Handy, unbekanntes System, 32-Bit-ARM).
+        function mwAssetKey(os, arch) {
+            if (os === 'windows') return 'windows-x64';
+            if (os === 'macos') return arch === 'x86_64' ? 'macos-x86_64' : 'macos-arm64';
+            if (os === 'linux') {
+                if (arch === 'arm32') return null;
+                return arch === 'arm64' ? 'linux-arm64' : 'linux-x86_64';
+            }
+            return null;
+        }
+
+        function mwDownloadUrl(file) {
+            return 'https://github.com/' + MW_REPO + '/releases/latest/download/' + file;
+        }
+        // </download-logic>
+
+        const MW_OS_INFO = {
+            windows: { name: 'Windows', icon: 'fab fa-windows' },
+            macos: { name: 'macOS', icon: 'fab fa-apple' },
+            linux: { name: 'Linux', icon: 'fab fa-linux' }
+        };
+        const MW_ARCH_NAMES = {
+            'windows-x64': '64-Bit',
+            'macos-arm64': 'Apple Silicon',
+            'macos-x86_64': 'Intel',
+            'linux-x86_64': 'x86_64',
+            'linux-arm64': 'arm64'
+        };
+
+        function mwApplyDownloads(nav, hint) {
+            const det = mwDetectPlatform(nav, hint);
+            const key = mwAssetKey(det.os, det.arch);
+            const info = MW_OS_INFO[det.os];
+            const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+            const btn = document.getElementById('dlPrimaryBtn');
+            const icon = document.getElementById('dlPrimaryIcon');
+
+            document.querySelectorAll('[data-os-card]').forEach(card => {
+                const active = card.dataset.osCard === det.os;
+                ['ring-2', 'ring-neonCyan', 'shadow-neon-cyan'].forEach(c => card.classList.toggle(c, active));
+            });
+
+            if (key) {
+                const file = MW_FILES[key];
+                const label = info.name + ' (' + MW_ARCH_NAMES[key] + ')';
+                set('dlDetected', 'Erkannt: ' + info.name);
+                set('dlPrimaryTitle', 'Mini Webserver für ' + label);
+                let note = file;
+                if (det.os === 'macos' && !det.archKnown) note += '. Bei einem älteren Intel-Mac nimm die Intel-Version aus der Liste unten.';
+                set('dlPrimaryNote', note);
+                set('dlPrimaryBtnText', 'Herunterladen');
+                if (btn) { btn.href = mwDownloadUrl(file); btn.removeAttribute('target'); }
+                if (icon) icon.className = info.icon;
+                document.querySelectorAll('[data-dl-label]').forEach(el => { el.textContent = 'Download für ' + info.name; });
+            } else {
+                const mobile = det.os === 'android' || det.os === 'ios';
+                set('dlDetected', mobile ? 'Erkannt: Handy oder Tablet' : (det.arch === 'arm32' ? 'Erkannt: Linux mit 32-Bit-ARM' : 'Betriebssystem nicht erkannt'));
+                set('dlPrimaryTitle', mobile ? 'Das Programm läuft auf dem Computer' : 'Wähle dein Betriebssystem');
+                set('dlPrimaryNote', mobile
+                    ? 'Öffne diese Seite am PC oder Mac. Dein Handy brauchst du später nur als Browser für die Adresse, die der Server anzeigt.'
+                    : (det.arch === 'arm32' ? 'Die Pakete gibt es für 64-Bit-Systeme. Auf dem Raspberry Pi brauchst du ein 64-Bit-System.' : 'Windows, macOS und Linux stehen unten zur Auswahl.'));
+                set('dlPrimaryBtnText', 'Alle Downloads ansehen');
+                if (btn) btn.href = '#dlAll';
+                if (icon) icon.className = 'fas fa-download';
+                document.querySelectorAll('[data-dl-label]').forEach(el => { el.textContent = 'Download'; });
+            }
+        }
+
+        function mwInitDownloads() {
+            document.querySelectorAll('[data-asset]').forEach(el => { el.href = mwDownloadUrl(MW_FILES[el.dataset.asset]); });
+            document.querySelectorAll('[data-file]').forEach(el => { el.href = mwDownloadUrl(el.dataset.file); });
+            document.querySelectorAll('[data-releases]').forEach(el => { el.href = 'https://github.com/' + MW_REPO + '/releases'; });
+            document.querySelectorAll('[data-repo-link]').forEach(el => { el.href = 'https://github.com/' + MW_REPO; });
+
+            mwApplyDownloads(window.navigator, {});
+            const uad = window.navigator.userAgentData;
+            if (uad && typeof uad.getHighEntropyValues === 'function') {
+                uad.getHighEntropyValues(['architecture'])
+                    .then(hint => mwApplyDownloads(window.navigator, hint))
+                    .catch(() => {});
+            }
+        }
+        mwInitDownloads();
+    </script>
+</body>
+</html>
