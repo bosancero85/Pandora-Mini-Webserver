@@ -1,0 +1,107 @@
+name: Release (Windows, macOS, Linux)
+
+# Neues Release veröffentlichen:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# Danach baut der Workflow alle Pakete und hängt sie an das GitHub-Release.
+# Manuell starten (Actions > Release > Run workflow) baut nur die Artefakte, ohne Release.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Bauen (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            asset: MiniWebserver-Windows-x64.exe
+          - name: macOS Apple Silicon
+            os: macos-15
+            asset: MiniWebserver-macOS-arm64.zip
+          - name: macOS Intel
+            os: macos-15-intel
+            asset: MiniWebserver-macOS-x86_64.zip
+          # Linux wird bewusst auf Ubuntu 22.04 (glibc 2.35) gebaut, damit die Programme
+          # auch auf älteren Systemen laufen (Debian 12, Raspberry Pi OS Bookworm, Ubuntu 22.04).
+          - name: Linux x86_64
+            os: ubuntu-22.04
+            asset: MiniWebserver-Linux-x86_64.tar.gz
+          - name: Linux arm64
+            os: ubuntu-22.04-arm
+            asset: MiniWebserver-Linux-arm64.tar.gz
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhängigkeiten für die Tests installieren
+        shell: bash
+        run: python -m pip install -r requirements.txt
+
+      - name: Tests
+        shell: bash
+        run: python -m unittest discover -s tests -v
+
+      - name: Bauen (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: build.bat
+
+      - name: Bauen (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: bash build_macos.sh
+
+      - name: Bauen (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash build_linux.sh
+
+      - name: Paket prüfen
+        shell: bash
+        run: |
+          test -s "dist/${{ matrix.asset }}"
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiniWebserver-${{ matrix.name }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+
+  release:
+    name: Release veröffentlichen
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: MiniWebserver-*
+          merge-multiple: true
+          path: release
+
+      - name: Prüfsummen erzeugen
+        working-directory: release
+        run: |
+          sha256sum MiniWebserver-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
