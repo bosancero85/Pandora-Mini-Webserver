@@ -95,4 +95,4 @@ Die Kernlogik (Server, Ordner, Einstellungen) wird echt getestet. Ein weiterer T
 
 ## Lizenz
 
-MIT, siehe [LICENSE](LICENSE).
+MIT, siehe [LICENSE](LICENCE).
